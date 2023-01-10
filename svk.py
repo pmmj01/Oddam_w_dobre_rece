@@ -1,1 +1,0 @@
-skv = 'django-insecure-2&+4j+ka39_(a&i44iq&bay0u1@zge@eoxri-(k-xjgz+6cz85'
