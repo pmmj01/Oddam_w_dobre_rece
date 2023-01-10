@@ -15,7 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from charytatywna.views import *
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', LandingPageView.as_view(), name='landing_page'),
+    path('add_donation/', AddDonationView.as_view(), name='add_donation'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('register/', RegisterView.as_view(), name='register'),
 ]
