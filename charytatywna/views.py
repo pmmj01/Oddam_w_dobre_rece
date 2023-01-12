@@ -1,13 +1,26 @@
+from django.db.models import Count, Sum
 from django.shortcuts import render, redirect
 from django.views import View
 from .forms import DonationForm, RegistrationForm, LoginForm
 from django.contrib.auth import authenticate, login
+from .models import Donation, Institution
 
 # Create your views here.
 class LandingPageView(View):
     template_name = 'index.html'
     def get(self, request):
-        return render(request, self.template_name)
+        total_donations = Donation.objects.aggregate(total=Sum('quantity'))
+        total_institution = Donation.objects.values('institution').annotate(total=Count('institution'))
+        if total_donations['total'] is None:
+            total_donations['total'] = 0
+        if not total_institution:
+            total_institution = 0
+        return render(request, 'index.html',
+                      {'total_donations': total_donations, 'total_institution': total_institution})
+    def category_count(request):
+        donations = Donation.objects.values('category').annotate(total=Count('category'))
+        return render(request, 'index.html', {'donations': donations})
+
 
 
 class AddDonationView(View):
