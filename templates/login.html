@@ -1,26 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
-    <header>
-        <nav class="container container--70">
-            <ul class="nav--actions">
-                <li>Aby móc przekazać dar zaloguj się lub załóż konto</li>
-            </ul>
-
-            <ul>
-                <li><a href="/" class="btn btn--without-border active">Start</a></li>
-                <li><a href="/#steps" class="btn btn--without-border">O co chodzi?</a></li>
-                <li><a href="/#about-us" class="btn btn--without-border">O nas</a></li>
-                <li><a href="/#help" class="btn btn--without-border">Fundacje i organizacje</a></li>
-                <li><a href="/#contact" class="btn btn--without-border">Kontakt</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <section class="login-page">
+{% block header %}
+      <section class="login-page">
         <h2>Zaloguj się</h2>
+        <h3>Aby móc przekazać dar zaloguj się lub załóż konto</h3>
         <form method="post" action="{% url 'login' %}">
             {% csrf_token %}
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <h3><span class="message">{{ message }}</span></h3>
+                    {% endfor %}
+                </div>
+            {% endif %}
             <div class="form-group">
                 <label for="email"></label>
                 <input type="email" id="email" name="email" placeholder="Email">
@@ -36,4 +28,6 @@
             </div>
         </form>
     </section>
+{% endblock %}
+{% block content %}
 {% endblock %}

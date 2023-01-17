@@ -1,26 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
-    <header>
-        <nav class="container container--70">
-            <ul class="nav--actions">
-                <li><a href="{% url 'login' %}" class="btn btn--small btn--without-border">Zaloguj</a></li>
-                <li class="highlighted"><a href="{% url 'register' %}" class="btn btn--small btn--highlighted">Załóż
-                    konto</a></li>
-            </ul>
-
-            <ul>
-                <li><a href="/" class="btn btn--without-border active">Start</a></li>
-                <li><a href="/#steps" class="btn btn--without-border">O co chodzi?</a></li>
-                <li><a href="/#about-us" class="btn btn--without-border">O nas</a></li>
-                <li><a href="/#help" class="btn btn--without-border">Fundacje i organizacje</a></li>
-                {% if user.is_authenticated %}
-                    <li><a href="{% url 'add_donation' %}" class="btn btn--without-border">Przekaż dary</a></li>
-                {% endif %}
-                <li><a href="#contact" class="btn btn--without-border">Kontakt</a></li>
-            </ul>
-        </nav>
-    </header>
+{% block header %}
     {% if user.is_authenticated %}
     {% else %}
         <section class="login-page">
@@ -36,7 +16,7 @@
                 </div>
                 <div class="form-group">
                     <label for="{{ form.last_name.id_for_label }}"></label>
-                    {{ form.last_name}}
+                    {{ form.last_name }}
                     {% for error in form.last_name.errors %}
                         <span class="error">{{ error }}</span>
                     {% endfor %}
@@ -49,9 +29,9 @@
                     {% endfor %}
                 </div>
                 <div class="form-group">
-                    <label for="{{ form.password1.id_for_label }}"></label>
-                    {{ form.password1 }}
-                    {% for error in form.password1.errors %}
+                    <label for="{{ form.password.id_for_label }}"></label>
+                    {{ form.password }}
+                    {% for error in form.password.errors %}
                         <span class="error">{{ error }}</span>
                     {% endfor %}
                 </div>
@@ -68,5 +48,4 @@
             </form>
         </section>
     {% endif %}
-
 {% endblock %}

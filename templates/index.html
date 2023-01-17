@@ -1,29 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
+{% block header %}
     <header class="header--main-page">
-    <nav class="container container--70">
-        <ul class="nav--actions">
-            {% if user.is_authenticated %}
-                Witaj {{ user.name }}<br>
-                <li><a href="{% url 'logout' %}" class="btn btn--small btn--without-border">Wyloguj</a></li>
-            {% else %}
-                <li><a href="{% url 'login' %}" class="btn btn--small btn--without-border">Zaloguj</a></li>
-                <li><a href="{% url 'register' %}" class="btn btn--small btn--highlighted">Załóż konto</a></li>
-            {% endif %}
-        </ul>
-
-        <ul>
-            <li><a href="/" class="btn btn--without-border active">Start</a></li>
-            <li><a href="/#steps" class="btn btn--without-border">O co chodzi?</a></li>
-            <li><a href="/#about-us" class="btn btn--without-border">O nas</a></li>
-            <li><a href="/#help" class="btn btn--without-border">Fundacje i organizacje</a></li>
-            {% if user.is_authenticated %}
-                <li><a href="{% url 'add_donation' %}" class="btn btn--without-border">Przekaż dary</a></li>
-            {% endif %}
-            <li><a href="#contact" class="btn btn--without-border">Kontakt</a></li>
-        </ul>
-    </nav>
         <div class="slogan container container--90">
             <div class="slogan--item">
                 <h1>
@@ -32,7 +10,9 @@
                 </h1>
             </div>
         </div>
-</header>
+    </header>
+    {% endblock %}
+{% block content %}
     <section id="stats" class="stats">
         <div class="container container--85">
             <div class="stats--item">
@@ -78,7 +58,11 @@
             </div>
         </div>
 
+        {% if user.is_authenticated %}
+                    <a href="{% url 'add_donation' %}" class="btn btn--large">Przekaż dar</a>
+        {% else %}
         <a href="{% url 'register' %}" class="btn btn--large">Załóż konto</a>
+        {% endif %}
     </section>
 
     <section id="about-us" class="about-us">
@@ -96,7 +80,8 @@
 
         <ul class="help--buttons">
             <li data-id="1"><a href="/#fundacje" class="btn btn--without-border active">Fundacjom</a></li>
-            <li data-id="2"><a href="/#organizacje_pozarządowym" class="btn btn--without-border">Organizacjom pozarządowym</a></li>
+            <li data-id="2"><a href="/#organizacje_pozarządowym" class="btn btn--without-border">Organizacjom
+                pozarządowym</a></li>
             <li data-id="3"><a href="/#lokalne_zbiorki" class="btn btn--without-border">Lokalnym zbiórkom</a></li>
         </ul>
 
