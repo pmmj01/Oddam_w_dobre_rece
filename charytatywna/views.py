@@ -5,9 +5,9 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView
 
-from .forms import DonationForm, RegisterForm, LoginForm
+from .forms import DonationForm, RegisterForm, LoginForm, DonationMultiForm
 from django.contrib.auth import authenticate, login
-from .models import Donation, Institution, CustomUser
+from .models import Donation, Institution, CustomUser, Category
 
 
 class RegisterView(View):
@@ -77,42 +77,36 @@ class LandingPageView(View):
 
 
 class AddDonationView(View):
-    template_name = 'form.html'
+    form_class = DonationMultiForm
+    template_form = 'form.html'
+    template_form_confirmation = 'form_confirmation.html'
 
-    def get(self, request):
-        return render(request, self.template_name)
+    def get(self, request, step=1):
+        donations_models = Donation.objects.all()
+        categories = Category.objects.all()
+        institutions = Institution.objects.all()
+        # form = self.form_class(initial={'key': 'value'})
+        if 'donation_data' not in request.session:
+            request.session['donation_data'] = {}
+        form = self.form_class(initial=request.session.get('donation_data').get('step_' + str(step)))
+        return render(request, self.template_form, {'form': form,
+                                                    'step': step,
+                                                    'donations_models': donations_models,
+                                                    'categories': categories,
+                                                    'institutions': institutions})
 
-# class LoginView(View):
-#     template_name = 'login.html'
-#     form_class = LoginForm
-#
-#     def get(self, request):
-#         form = self.form_class()
-#         return render(request, self.template_name, {'form': form})
-#
-#     def post(self, request):
-#         form = self.form_class(request.POST)
-#         if form.is_valid():
-#             email = form.cleaned_data.get('email')
-#             password = form.cleaned_data.get('password')
-#             user = authenticate(request, email=email, password=password)
-#
-#             if user is not None:
-#                 login(request, user)
-#                 return redirect('/')
-#
-#         return render(request, self.template_name, {'form': form})
-#
-# class RegisterView(View):
-#     template_name = 'register.html'
-#
-#     def get(self, request):
-#         form = RegistrationForm()
-#         return render(request, self.template_name, {'form': form})
-#
-#     def post(self, request):
-#         form = RegistrationForm(request.POST)
-#         if form.is_valid():
-#             new_user = form.save()
-#             return redirect('login')
-#         return render(request, 'register.html', {'form': form})
+    def post(self, request, step=1):
+        donations_models = Donation.objects.all()
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            request.session['donation_data']['step_' + str(step)] = form.cleaned_data
+            if step == 6:
+                donation = Donation.objects.create(**request.session.get('donation_data'))
+                return redirect('success')
+            else:
+                return redirect('add_donation', step=step + 1)
+        else:
+            return render(request, self.template_form, {'form': form,
+                                                        'step': step,
+                                                        'donations_models': donations_models})
+

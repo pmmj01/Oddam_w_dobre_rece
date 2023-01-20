@@ -40,19 +40,19 @@ class RegisterForm(forms.ModelForm):
             pass
 
 
-class DonationForm(forms.ModelForm):
-    class Meta:
-        model = Donation
-        fields = ['quantity', 'categories', 'institution', 'address', 'phone_number', 'city', 'zip_code',
-                  'pick_up_date', 'pick_up_time', 'pick_up_comment', 'user']
-
-    def clean_phone_number(self):
-        phone_number = self.cleaned_data.get('phone_number')
-        pattern = re.compile(r'^(\d{2,3})(\d{9,11})$')
-        if not pattern.match(phone_number):
-            raise forms.ValidationError(
-                "Numer telefonu jest niepoprawny, powinien zawierać kierunkowy 2-3 cyfry i 9-11 cyfr numeru.")
-        return phone_number
+# class DonationForm(forms.ModelForm):
+#     class Meta:
+#         model = Donation
+#         fields = ['quantity', 'categories', 'institution', 'address', 'phone_number', 'city', 'zip_code',
+#                   'pick_up_date', 'pick_up_time', 'pick_up_comment', 'user']
+#
+#     def clean_phone_number(self):
+#         phone_number = self.cleaned_data.get('phone_number')
+#         pattern = re.compile(r'^(\d{2,3})(\d{9,11})$')
+#         if not pattern.match(phone_number):
+#             raise forms.ValidationError(
+#                 "Numer telefonu jest niepoprawny, powinien zawierać kierunkowy 2-3 cyfry i 9-11 cyfr numeru.")
+#         return phone_number
 
 
 # class RegistrationForm(UserCreationForm):
@@ -82,3 +82,32 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Hasło'}))
 #     # email = forms.EmailField(label='Email', widget=forms.TextInput(attrs={'placeholder': 'Email'}))
 #     # password = forms.CharField(label='Hasło', widget=forms.PasswordInput(attrs={'placeholder': 'Hasło'}))
+
+
+class DonationForm(forms.Form):
+    categories = forms.MultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple,
+        choices=[
+            ("clothes-to-use", "Clothes suitable for reuse"),
+            ("clothes-useless", "Clothes for disposal"),
+            ("toys", "Toys"),
+            ("books", "Books"),
+            ("other", "Other"),
+        ],
+    )
+
+
+class DonationMultiForm(forms.ModelForm):
+    quantity = models.IntegerField()
+    categories = forms.ModelMultipleChoiceField(queryset=Category.objects.all())
+    institution = forms.ModelChoiceField(queryset=Institution.objects.all())
+    address = forms.CharField()
+    phone_number = forms.CharField()
+    city = forms.CharField()
+    zip_code = forms.CharField()
+    pick_up_date = forms.DateField()
+    pick_up_time = forms.TimeField()
+    archived = forms.BooleanField()
+    class Meta:
+        model = Donation
+        fields = ('quantity', 'categories', 'institution', 'address', 'phone_number', 'city', 'zip_code', 'pick_up_date', 'pick_up_time')
