@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView
 
-from .forms import DonationForm, RegisterForm, LoginForm, DonationMultiForm
+from .forms import RegisterForm, LoginForm, DonationMultiForm
 from django.contrib.auth import authenticate, login
 from .models import Donation, Institution, CustomUser, Category
 
@@ -100,13 +100,18 @@ class AddDonationView(View):
         form = self.form_class(request.POST)
         if form.is_valid():
             request.session['donation_data']['step_' + str(step)] = form.cleaned_data
-            if step == 6:
+            if step == 5:
                 donation = Donation.objects.create(**request.session.get('donation_data'))
-                return redirect('success')
+                return render(request, self.template_form,
+                              {'donation_data': request.session.get('donation_data')})
             else:
                 return redirect('add_donation', step=step + 1)
         else:
             return render(request, self.template_form, {'form': form,
                                                         'step': step,
-                                                        'donations_models': donations_models})
+                                                        'donations_models': donations_models,
+                                                        'errors': form.errors})
 
+    def on_submit(self, request):
+        donation = Donation.objects.create(**request.session.get('donation_data'))
+        return render(request, self.template_form_confirmation)

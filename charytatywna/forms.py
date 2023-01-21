@@ -84,30 +84,52 @@ class LoginForm(forms.Form):
 #     # password = forms.CharField(label='Hasło', widget=forms.PasswordInput(attrs={'placeholder': 'Hasło'}))
 
 
-class DonationForm(forms.Form):
-    categories = forms.MultipleChoiceField(
-        widget=forms.CheckboxSelectMultiple,
-        choices=[
-            ("clothes-to-use", "Clothes suitable for reuse"),
-            ("clothes-useless", "Clothes for disposal"),
-            ("toys", "Toys"),
-            ("books", "Books"),
-            ("other", "Other"),
-        ],
-    )
+# class DonationForm(forms.Form):
+#     categories = forms.MultipleChoiceField(
+#         widget=forms.CheckboxSelectMultiple,
+#         choices=[
+#             ("clothes-to-use", "Clothes suitable for reuse"),
+#             ("clothes-useless", "Clothes for disposal"),
+#             ("toys", "Toys"),
+#             ("books", "Books"),
+#             ("other", "Other"),
+#         ],
+#     )
 
 
 class DonationMultiForm(forms.ModelForm):
-    quantity = models.IntegerField()
-    categories = forms.ModelMultipleChoiceField(queryset=Category.objects.all())
-    institution = forms.ModelChoiceField(queryset=Institution.objects.all())
-    address = forms.CharField()
-    phone_number = forms.CharField()
-    city = forms.CharField()
-    zip_code = forms.CharField()
-    pick_up_date = forms.DateField()
-    pick_up_time = forms.TimeField()
-    archived = forms.BooleanField()
+    QUANTITY_CHOICES = [(i, i) for i in range(1, 20)]
+    quantity = forms.ChoiceField(choices=QUANTITY_CHOICES, widget=forms.Select(attrs={'class': 'quantity-select'}), required=True)
+    categories = forms.ModelMultipleChoiceField(queryset=Category.objects.all(), widget=forms.CheckboxSelectMultiple, required=True)
+    institution = forms.ModelChoiceField(queryset=Institution.objects.all(), widget=forms.Select, required=True)
+    address = forms.CharField(required=True)
+    phone_number = forms.CharField(required=True)
+    city = forms.CharField(required=True)
+    zip_code = forms.CharField(required=True)
+    pick_up_date = forms.CharField(widget=forms.SelectDateWidget(attrs={'placeholder': 'Data'}), required=True)
+    pick_up_time = forms.TimeField(widget=forms.TextInput(attrs={'placeholder': 'Godzina (HH:MM)', 'pattern': '\d{2}:\d{2}'}), required=True)
+    pick_up_comment = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Uwagi dla kuriera', 'rows': 5}), required=True)
+    archived = forms.BooleanField(initial=False, required=True)
+
+    def clean_pick_up_time(self):
+        pick_up_time = self.cleaned_data.get('pick_up_time')
+        if pick_up_time:
+            if len(pick_up_time) > 5:
+                self.add_error('pick_up_time', "Wprowadzony czas jest za długi (max 5 znaków)")
+            if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', pick_up_time):
+                self.add_error('pick_up_time', "Niepoprawny format godziny (HH:MM)")
+            if int(pick_up_time.strftime('%M')) > 59:
+                self.add_error('pick_up_time', "Minuta nie może być większa niż 59")
+        return pick_up_time
+
+    def clean_zip_code(self):
+        zip_code = self.cleaned_data.get('zip_code')
+        if zip_code:
+            if len(zip_code) > 5:
+                self.add_error('zip_code', "Wprowadzony kod pocztowy jest za długi (max 6 znaków)")
+            if not re.match(r'^[0-9]{2}-[0-9]{3}$', zip_code):
+                self.add_error('zip_code', "Niepoprawny format kodu pocztowego (XX-XXX)")
+        return zip_code
     class Meta:
         model = Donation
         fields = ('quantity', 'categories', 'institution', 'address', 'phone_number', 'city', 'zip_code', 'pick_up_date', 'pick_up_time')

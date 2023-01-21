@@ -76,11 +76,12 @@ class Institution(models.Model):
     description = models.TextField()
     type = models.CharField(max_length=26, choices=OPTIONS.choices,
                             default=OPTIONS.OPTION1)
-    category = models.ManyToManyField(Category, related_name='institutions')
+    category = models.ManyToManyField(Category, related_name='categories')
 
     def __str__(self):
-        categories_str = ', '.join([category.name[:8] for category in self.category.all()])
-        return f'{self.name} ({self.get_type_display()}) - {categories_str}'
+        # categories_str = ', '.join([category.name[:8] for category in self.category.all()])
+        # return f'{self.name} ({self.get_type_display()}) - {categories_str}.'
+        return self.name
 
 
 
@@ -114,4 +115,4 @@ class Donation(models.Model):
 
     def __str__(self):
         categories_str = ', '.join([category.name[:20] for category in self.categories.all()])
-        return f'{self.institution} "{categories_str}" ({self.quantity}x)'
+        return f'{self.institution} "{categories_str}" ({self.quantity}x).'

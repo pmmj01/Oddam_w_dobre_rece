@@ -56,6 +56,7 @@
                 <div class="form--steps-counter">Krok <span>1</span>/5</div>
 
                 <form action="form-confirmation.html" method="post">
+                    {% csrf_token %}
                     <!-- STEP 1: class .active is switching steps -->
                     <div data-step="1" class="active">
                         <h3>Zaznacz co chcesz oddać:</h3>
@@ -87,7 +88,7 @@
                             <label>
                                 Liczba 60l worków:
                                 {{ form.quantity }}
-{#                                <input type="number" name="bags" step="1" min="1"/>#}
+                                {#                                <input type="number" name="bags" step="1" min="1"/>#}
                             </label>
                         </div>
 
@@ -98,20 +99,19 @@
                     </div>
 
 
-                    <!-- STEP 4 -->
+                    <!-- STEP 3 -->
                     <div data-step="3">
                         <h3>Wybierz organizacje, której chcesz pomóc:</h3>
 
                         <div class="form-group form-group--checkbox">
                             {% for institution in institutions %}
-                                <label>
+                                <label data-categories="{{ institution.category.all }}">
                                     <input type="radio" name="organization" value="{{ institution.pk }}"/>
                                     <span class="checkbox radio"></span>
                                     <span class="description">
-                                    <div class="title">{{ institution.name }}</div>
+                                    <div class="title">{{ institution }}</div>
                                     <div class="subtitle">
-                                        Cel i misja: {{ institution.category }}
-                                        {{ institution.description }}
+                                        Cel i misja: {{ institution.description }}
                                     </div>
                             </span>
                                 </label>
@@ -125,7 +125,7 @@
                         </div>
                     </div>
 
-                    <!-- STEP 5 -->
+                    <!-- STEP 4 -->
                     <div data-step="4">
                         <h3>Podaj adres oraz termin odbioru rzecz przez kuriera:</h3>
 
@@ -133,41 +133,53 @@
                             <div class="form-section--column">
                                 <h4>Adres odbioru</h4>
                                 <div class="form-group form-group--inline">
-                                    <label> Ulica <input type="text" name="address"/> </label>
+                                    <label> Ulica {{ form.address }} </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label> Miasto <input type="text" name="city"/> </label>
+                                    <label> Miasto {{ form.city }} </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label>
-                                        Kod pocztowy <input type="text" name="postcode"/>
-                                    </label>
+                                    <label> Kod pocztowy {{ form.zip_code }} </label>
+                                    <script>
+                                        document.querySelector('#id_zip_code').addEventListener('input', function (e) {
+                                            if (e.target.value.length === 2 && e.target.value.slice(-1) !== ':') {
+                                                e.target.value += '-';
+                                            }
+                                        });
+                                    </script>
+
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label>
-                                        Numer telefonu <input type="phone" name="phone"/>
-                                    </label>
+                                    <label> Numer telefonu {{ form.phone_number }} </label>
                                 </div>
                             </div>
 
                             <div class="form-section--column">
                                 <h4>Termin odbioru</h4>
                                 <div class="form-group form-group--inline">
-                                    <label> Data <input type="date" name="data"/> </label>
+                                    <label>{{ form.pick_up_date }} </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label> Godzina <input type="time" name="time"/> </label>
+                                    <label for="{{ form.errors.pick_up_time }}">
+                                        {{ form.pick_up_time }}</label>
+                                    <script>
+                                        document.querySelector('#id_pick_up_time').addEventListener('input', function (e) {
+                                            if (e.target.value.length === 2 && e.target.value.slice(-1) !== ':') {
+                                                e.target.value += ':'
+                                            }
+                                        });
+                                    </script>
+                                    {% if form.errors.pick_up_time %}
+                                        <div class="alert alert-danger">{{ form.errors.pick_up_time }}</div>
+                                    {% endif %}
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label>
-                                        Uwagi dla kuriera
-                                        <textarea name="more_info" rows="5"></textarea>
-                                    </label>
+                                    <label>{{ form.pick_up_comment }}</label>
                                 </div>
                             </div>
                         </div>
@@ -177,7 +189,7 @@
                         </div>
                     </div>
 
-                    <!-- STEP 6 -->
+                    <!-- STEP 5 -->
                     <div data-step="5">
                         <h3>Podsumowanie Twojej darowizny</h3>
 
@@ -187,16 +199,15 @@
                                 <ul>
                                     <li>
                                         <span class="icon icon-bag"></span>
-                                        <span class="summary--text"
-                                        >4 worki ubrań w dobrym stanie dla dzieci</span
-                                        >
+                                        <span class="summary--text">
+                                            {{ donation_data.quantity }} worków z {{ donation_data.categories }}
+                                        </span>
                                     </li>
 
                                     <li>
                                         <span class="icon icon-hand"></span>
                                         <span class="summary--text"
-                                        >Dla fundacji "Mam marzenie" w Warszawie</span
-                                        >
+                                        >Dla {{ donation_data.institution }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -205,19 +216,19 @@
                                 <div class="form-section--column">
                                     <h4>Adres odbioru:</h4>
                                     <ul>
-                                        <li>Prosta 51</li>
-                                        <li>Warszawa</li>
-                                        <li>99-098</li>
-                                        <li>123 456 789</li>
+                                        <li>{{ donation_data.address }}</li>
+                                        <li>{{ donation_data.city }}</li>
+                                        <li>{{ donation_data.zip_code }}</li>
+                                        <li>{{ donation_data.phone_number }}</li>
                                     </ul>
                                 </div>
 
                                 <div class="form-section--column">
                                     <h4>Termin odbioru:</h4>
                                     <ul>
-                                        <li>13/12/2018</li>
-                                        <li>15:40</li>
-                                        <li>Brak uwag</li>
+                                        <li>{{ donation_data.pich_up_date }}</li>
+                                        <li>{{ donation_data.pich_up_time }}</li>
+                                        <li>{{ donation_data.pich_up_coment }}</li>
                                     </ul>
                                 </div>
                             </div>
