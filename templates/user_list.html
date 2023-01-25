@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block header %}
+    <header>
+        <div class="container container--85">
+            <h2>Użytkownicy:</h2>
+        </div>
+    </header>
+{% endblock %}
+{% block content %}
+    <section id="stats" class="stats">
+    <h3 class="counter">Ilość uzytkowników: {{ users.count }}</h3>
+        <div class="container container--85">
+            <table class="admin-group">
+                <thead>
+                <tr>
+                    <th>Imie</th>
+                    <th>Nazwisko</th>
+                    <th>Email</th>
+                    <th>ID</th>
+                    <th>Ilość powiązanych darowizn</th>
+                    <th>Uzytkownik/Superuser</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.first_name }}</td>
+                        <td>{{ user.last_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.pk }}</td>
+                        <td>{{ user.donations_set.count }}</td>
+                        <td>{% if user.is_superuser %} Superuser {% else %} Uzytkownik {% endif %}</td>
+                        <div class="admin-group admin-group--buttons">
+                            <td><a href="/user/edit/{{ user.pk }}/" class="btn btn-primary">Edit</a></td>
+                            <td><a href="/user/delete/{{ user.pk }}/" class="btn btn-warning">Delete</a></td>
+                        </div>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

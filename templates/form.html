@@ -55,22 +55,22 @@
             <div class="form--steps-container">
                 <div class="form--steps-counter">Krok <span>1</span>/5</div>
 
-                <form action="form-confirmation.html" method="post">
+                <form method="post">
                     {% csrf_token %}
                     <!-- STEP 1: class .active is switching steps -->
                     <div data-step="1" class="active">
                         <h3>Zaznacz co chcesz oddać:</h3>
-                        {% for category in categories %}
+                        {% for categories in form.categories %}
                             <div class="form-group form-group--checkbox">
                                 <label>
                                     <input
                                             type="checkbox"
                                             name="categories"
-                                            value="{{ category.pk }}"
-                                            {% if category.pk in form.categories.value %}checked{% endif %}
+                                            value="{{ categories.pk }}"
+                                            {% if categories.pk in form.categories.value %}checked{% endif %}
                                     />
                                     <span class="checkbox"></span>
-                                    <span class="description">{{ category.name }}</span>
+                                    <span class="description">{{ categories }}</span>
                                 </label>
                             </div>
                         {% endfor %}
@@ -104,18 +104,18 @@
                         <h3>Wybierz organizacje, której chcesz pomóc:</h3>
 
                         <div class="form-group form-group--checkbox">
-                            {% for institution in institutions %}
-                                <label data-categories="{{ institution.category.all }}">
-                                    <input type="radio" name="organization" value="{{ institution.pk }}"/>
-                                    <span class="checkbox radio"></span>
-                                    <span class="description">
-                                    <div class="title">{{ institution }}</div>
+                            {#                            {% for institution in form.institution %}#}
+                            <label data-categories="{{ institution.category.all }}">
+                                <input type="radio" name="organization" value="institution"/>
+                                <span class="checkbox radio">{{ institution.category.all }}</span>
+                                <span class="description">
+                                    <div class="title">{{ form.institution }}</div>
                                     <div class="subtitle">
-                                        Cel i misja: {{ institution.description }}
+                                        Cel i misja: {{ institution.pk }}
                                     </div>
                             </span>
-                                </label>
-                            {% endfor %}
+                            </label>
+                            {#                            {% endfor %}#}
                         </div>
 
 
@@ -190,7 +190,7 @@
                     </div>
 
                     <!-- STEP 5 -->
-                    <div data-step="5">
+                    <div data-step="5" name="step" value="5">
                         <h3>Podsumowanie Twojej darowizny</h3>
 
                         <div class="summary">
@@ -199,15 +199,17 @@
                                 <ul>
                                     <li>
                                         <span class="icon icon-bag"></span>
-                                        <span class="summary--text">
-                                            {{ donation_data.quantity }} worków z {{ donation_data.categories }}
+                                        <span class="summary--text" id="quantity">
+                                                <p>Kategoria: {{ category }}</p>
+                                            {{ category }} worków z {{ categories }}
+                                            {{ quantity }} worków z {{ donation.categories }}
                                         </span>
                                     </li>
 
                                     <li>
                                         <span class="icon icon-hand"></span>
-                                        <span class="summary--text"
-                                        >Dla {{ donation_data.institution }}</span>
+                                        <span class="summary--text" id="institution"
+                                        >Dla {{ institution }} {{ donation.institution }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -216,19 +218,30 @@
                                 <div class="form-section--column">
                                     <h4>Adres odbioru:</h4>
                                     <ul>
-                                        <li>{{ donation_data.address }}</li>
-                                        <li>{{ donation_data.city }}</li>
-                                        <li>{{ donation_data.zip_code }}</li>
-                                        <li>{{ donation_data.phone_number }}</li>
+                                        <li id="address"></li>
+                                        <li id="city"></li>
+                                        <li id="zip_code"></li>
+                                        <li id="phone_number"></li>
+                                    </ul>
+                                    <ul>
+                                        <li>{{ address }}</li>
+                                        <li>{{ city }}</li>
+                                        <li>{{ zip_code }}</li>
+                                        <li>{{ phone_number }}</li>
                                     </ul>
                                 </div>
 
                                 <div class="form-section--column">
                                     <h4>Termin odbioru:</h4>
                                     <ul>
-                                        <li>{{ donation_data.pich_up_date }}</li>
-                                        <li>{{ donation_data.pich_up_time }}</li>
-                                        <li>{{ donation_data.pich_up_coment }}</li>
+                                        <li>{{ pick_up_date }}</li>
+                                        <li>{{ pick_up_time }}</li>
+                                        <li>{{ pick_up_coment }}</li>
+                                    </ul>
+                                    <ul>
+                                        <li>{{ donation.pich_up_date }}</li>
+                                        <li>{{ donation.pich_up_time }}</li>
+                                        <li>{{ donation.pich_up_coment }}</li>
                                     </ul>
                                 </div>
                             </div>
@@ -242,6 +255,8 @@
                 </form>
             </div>
         </section>
+
+        <script src="{% static 'js/jquery.js' %}"></script>
     {% else %}
         <meta http-equiv="refresh" content="0; {% url 'register' %}"/>
     {% endif %}

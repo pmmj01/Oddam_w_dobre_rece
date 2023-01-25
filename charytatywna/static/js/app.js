@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
          * TODO: callback to page change event
          */
         changePage(e) {
-            e.preventDefault();
+            // e.preventDefault();
             const page = e.target.dataset.page;
 
             console.log(page);
@@ -193,6 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
         /**
          * All events that are happening in form
          */
+
         events() {
             // Next step
             this.$next.forEach(btn => {
@@ -200,6 +201,60 @@ document.addEventListener("DOMContentLoaded", function () {
                     e.preventDefault();
                     this.currentStep++;
                     this.updateForm();
+
+                    if (this.currentStep === 5) {
+                        const quantity = document.querySelector('input[name="quantity"]').value
+                        const quantity_summary = document.getElementById('quantity')
+                        const categories = []
+                        const category = document.querySelectorAll('input[type="checkbox"]:checked')
+                        category.forEach(id => {
+                            categories.push(' ' + id.getAttribute('data-id'))
+                        })
+                        if (parseInt(quantity) === 1) {
+                            quantity_summary.innerText = quantity + ' worek z: ' + categories;
+                        } else if (parseInt(bags) < 5) {
+                            quantity_summary.innerText = quantity + ' worki z: ' + categories;
+                        } else {
+                            quantity_summary.innerText = quantity + ' worków z: ' + categories;
+                        }
+                        const institution_checked = document.querySelector('input[type="radio"]:checked');
+                        const institution = institution_checked.getAttribute('data-id')
+                        const institution_summary = document.getElementById('institution')
+                        institution_summary.innerText = 'Dla ' + institution
+
+                        const address = document.querySelector('input[name="address"]').value
+                        const address_summary = document.getElementById('address')
+                        address_summary.innerText = address
+
+                        const city = document.querySelector('input[name="city"]').value
+                        const city_summary = document.getElementById('city')
+                        city_summary.innerText = city
+
+                        const zip_code = document.querySelector('input[name="zip_code"]').value
+                        const zip_code_summary = document.getElementById('zip_code')
+                        zip_code_summary.innerText = zip_code
+
+                        const phone_number = document.querySelector('input[name="phone_number"]').value
+                        const phone_number_summary = document.getElementById('phone_number')
+                        phone_number_summary.innerText = phone_number
+
+                        const pick_up_date = document.querySelector('input[name="pick_up_date"]').value
+                        const pick_up_date_summary = document.getElementById('pick_up_date')
+                        pick_up_date_summary.innerText = pick_up_date
+
+                        const pick_up_time = document.querySelector('input[name="pick_up_time"]').value
+                        const pick_up_time_summary = document.getElementById('pick_up_time')
+                        pick_up_time_summary.innerText = pick_up_time
+
+                        const pick_up_coment = document.querySelector('textarea[name="pick_up_coment"]').value
+                        const pick_up_coment_summary = document.getElementById('pick_up_coment')
+                        if (pick_up_coment !== "") {
+                            pick_up_coment_summary.innerText = pick_up_coment
+                        } else {
+                            pick_up_coment_summary.innerText = "Brak uwag"
+                        }
+
+                    }
                 });
             });
 
@@ -236,7 +291,6 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$stepInstructions[0].parentElement.parentElement.hidden = this.currentStep >= 6;
             this.$step.parentElement.hidden = this.currentStep >= 6;
 
-            // TODO: get data from inputs and show them in summary
         }
 
         /**
@@ -245,7 +299,7 @@ document.addEventListener("DOMContentLoaded", function () {
          * TODO: validation, send data to server
          */
         submit(e) {
-            e.preventDefault();
+            // e.preventDefault();
             this.currentStep++;
             this.updateForm();
         }
@@ -255,25 +309,4 @@ document.addEventListener("DOMContentLoaded", function () {
     if (form !== null) {
         new FormSteps(form);
     }
-
-
-    const nextStepBtn = document.querySelector(".form-group--buttons .next-step");
-    nextStepBtn.addEventListener("click", function () {
-        const selectedCategories = [];
-        const categoryCheckboxes = document.querySelectorAll("input[name='categories']:checked");
-        for (let i = 0; i < categoryCheckboxes.length; i++) {
-            selectedCategories.push(categoryCheckboxes[i].value);
-        }
-    });
-    const institutions = document.querySelectorAll(".form-group--checkbox label");
-    for (let i = 0; i < institutions.length; i++) {
-        const institutionCategories = institutions[i].dataset.categories.split(",");
-        const isSelected = selectedCategories.every(function(val) {
-            return institutionCategories.indexOf(val) !== -1;
-        });
-        if (!isSelected) {
-            institutions[i].style.display = "none";
-        }
-    }
-
 });

@@ -25,4 +25,11 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
+    path('confirmation/', DonationFormView.as_view(), name='confirmation'),
+    path('user/details/', UserDetails.as_view(), name='user_details'),
+    path('user/update/', UserUpdate.as_view(), name='user_update'),
+    path('user/change_password/', ChangePassword.as_view(), name='change_password'),
+    path('user/list/', UserListView.as_view(), name='user_list'),
+    path('user/edit/<int:id>/', UserEditView.as_view(), name='user_edit'),
+    path('user/delete/<int:id>/', UserDeleteView.as_view(), name='user_delete'),
 ]

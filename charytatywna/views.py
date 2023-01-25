@@ -1,11 +1,13 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Sum
-from django.shortcuts import render, redirect, reverse
+from django.db.models.functions import Coalesce
+from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView
-
-from .forms import RegisterForm, LoginForm, DonationMultiForm
+from .forms import RegisterForm, LoginForm, DonationMultiForm, UserEditForm
 from django.contrib.auth import authenticate, login
 from .models import Donation, Institution, CustomUser, Category
 
@@ -13,6 +15,7 @@ from .models import Donation, Institution, CustomUser, Category
 class RegisterView(View):
     form_class = RegisterForm
     template_name = 'register.html'
+
     def get(self, request):
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
@@ -63,11 +66,15 @@ class LandingPageView(View):
 
     def get(self, request):
         total_donations = Donation.objects.aggregate(total=Sum('quantity'))
-        total_institution = Donation.objects.values('institution').annotate(total=Count('institution'))
+        total_institution = Donation.objects.values('institution__name').annotate(total=Count('institution__name'))
+        # total_institution = Donation.objects.count()
+        # total_institution = Donation.objects.values('institution').annotate(total=Coalesce(Count('institution'), 0))
+
         if total_donations['total'] is None:
             total_donations['total'] = 0
-        if not total_institution:
-            total_institution = 0
+        # if not total_institution:
+        #     total_institution = 0
+
         return render(request, 'index.html',
                       {'total_donations': total_donations, 'total_institution': total_institution})
 
@@ -76,42 +83,214 @@ class LandingPageView(View):
         return render(request, 'index.html', {'donations': donations})
 
 
-class AddDonationView(View):
-    form_class = DonationMultiForm
+# class AddDonationView(LoginRequiredMixin, View):
+# form_class = DonationMultiForm
+# template_form = 'form.html'
+# template_form_confirmation = 'form-confirmation.html'
+
+# def get(self, request):
+#     donations_models = Donation.objects.all()
+#     categories = Category.objects.all()
+#     institutions = Institution.objects.all()
+#     donation_data = request.session.get('donation_data')
+#     step = int(self.request.GET.get('data-step', 1))
+#     if 'donation_data' not in request.session:
+#         request.session['donation_data'] = {}
+#     form = self.form_class(initial=request.session.get('donation_data').get('step_' + str(step)))
+#     if step > 5:
+#         step = 5
+#     return render(request, self.template_form, {'form': form,
+#                                                 'step': step,
+#                                                 'donations_models': donations_models,
+#                                                 'categories': categories,
+#                                                 'institutions': institutions,
+#                                                 'donation_data': donation_data})
+#
+# def post(self, request):
+#     step = int(self.request.POST.get('data-step', 1))
+#     donations_models = Donation.objects.all()
+#     categories = Category.objects.all()
+#     institutions = Institution.objects.all()
+#     form = self.form_class(request.POST, step=step)
+#     if form.is_valid():
+#         request.session['donation_data']['step' + str(step)] = form.cleaned_data
+#         if step == 5:
+#             donation = Donation.objects.create(**request.session.get('donation_data'))
+#             form.save()
+#             return render(request, self.template_form_confirmation, {'donation': donation,
+#                                                         'form': form,
+#                                                         'data-step': step,
+#                                                         'donations_models': donations_models,
+#                                                         'errors': form.errors,
+#                                                         'categories': categories,
+#                                                         'institutions': institutions})
+#         else:
+#             if step < 5:
+#                 step += 1
+#             return redirect('add_donation', step=step+1)
+#     else:
+#         return redirect(reverse(self.template_form_confirmation))
+
+class AddDonationView(LoginRequiredMixin, View):
     template_form = 'form.html'
-    template_form_confirmation = 'form_confirmation.html'
 
-    def get(self, request, step=1):
-        donations_models = Donation.objects.all()
-        categories = Category.objects.all()
-        institutions = Institution.objects.all()
-        # form = self.form_class(initial={'key': 'value'})
-        if 'donation_data' not in request.session:
-            request.session['donation_data'] = {}
-        form = self.form_class(initial=request.session.get('donation_data').get('step_' + str(step)))
-        return render(request, self.template_form, {'form': form,
-                                                    'step': step,
-                                                    'donations_models': donations_models,
-                                                    'categories': categories,
-                                                    'institutions': institutions})
+    def get(self, request):
+        form = DonationMultiForm(initial={'institution': Institution.objects.all()})
+        category = request.GET.get('category')
+        quantityt = request.GET.get('quantity')
+        institutiont = request.GET.get('institution')
+        addresst = request.GET.get('address')
+        phone_numbert = request.GET.get('phone_number')
+        cityt = request.GET.get('city')
+        zip_codet = request.GET.get('zip_code')
+        pick_up_datet = request.GET.get('pick_up_date')
+        pick_up_timet = request.GET.get('pick_up_time')
+        pick_up_comment = request.GET.get('pick_up_comment')
+        return render(request, self.template_form, {'form': form})
 
-    def post(self, request, step=1):
-        donations_models = Donation.objects.all()
-        form = self.form_class(request.POST)
+    def post(self, request):
+        form = DonationMultiForm(request.POST)
         if form.is_valid():
-            request.session['donation_data']['step_' + str(step)] = form.cleaned_data
-            if step == 5:
-                donation = Donation.objects.create(**request.session.get('donation_data'))
-                return render(request, self.template_form,
-                              {'donation_data': request.session.get('donation_data')})
-            else:
-                return redirect('add_donation', step=step + 1)
-        else:
-            return render(request, self.template_form, {'form': form,
-                                                        'step': step,
-                                                        'donations_models': donations_models,
-                                                        'errors': form.errors})
+            # request.session['category'] = form.cleaned_data['category']
+            # request.session['quantity'] = form.cleaned_data['quantity']
+            # request.session['institution'] = form.cleaned_data['institution']
+            # request.session['address'] = form.cleaned_data['address']
+            # request.session['phone_number'] = form.cleaned_data['phone_number']
+            # request.session['city'] = form.cleaned_data['city']
+            # request.session['zip_code'] = form.cleaned_data['zip_code']
+            # request.session['pick_up_date'] = form.cleaned_data['pick_up_date']
+            # request.session['pick_up_time'] = form.cleaned_data['pick_up_time']
+            # request.session['pick_up_comment'] = form.cleaned_data['pick_up_comment']
+            # context = {
+            #     'category': request.session.POST.get('category'),
+            #     'quantity': request.session.POST.get('quantity'),
+            #     'institution': request.session.POST.get('institution'),
+            #     'address': request.session.POST.get('address'),
+            #     'phone_number': request.session.POST.get('phone_number'),
+            #     'city': request.session.POST.get('city'),
+            #     'zip_code': request.session.POST.get('zip_code'),
+            #     'pick_up_date': request.session.POST.get('pick_up_date'),
+            #     'pick_up_time': request.session.POST.get('pick_up_time'),
+            #     'pick_up_comment': request.session.POST.get('pick_up_comment')}
+            category = request.POST.get('category')
+            quantity = request.POST.get('quantity')
+            institution = request.POST.get('institution')
+            address = request.POST.get('address')
+            phone_number = request.POST.get('phone_number')
+            city = request.POST.get('city')
+            zip_code = request.POST.get('zip_code')
+            pick_up_date = request.POST.get('pick_up_date')
+            pick_up_time = request.POST.get('pick_up_time')
+            pick_up_comment = request.POST.get('pick_up_comment')
+            return redirect(reverse(self.template_form))
+            # return redirect('add_donation')
+        return render(request, self.template_form, {'form': form, 'errors': form.errors})
 
-    def on_submit(self, request):
-        donation = Donation.objects.create(**request.session.get('donation_data'))
-        return render(request, self.template_form_confirmation)
+    def delete(self, request):
+        request.session.flush()
+        return redirect('confirmation')
+
+
+class DonationFormView(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'form-confirmation.html')
+
+
+class UserDetails(LoginRequiredMixin, View):
+    def get(self, request):
+        user = request.user
+        donations = Donation.objects.filter(user_id=user.id)
+        return render(request, 'user_details.html', {'user': user, 'donations': donations})
+
+    def post(self, request):
+        confirm = request.POST.get('confirm')
+        donation = Donation.objects.get(id=confirm)
+        donation.is_taken = True
+        donation.save()
+        return redirect(reverse('user_details'))
+
+
+class UserUpdate(LoginRequiredMixin, View):
+    template_name = 'user_update.html'
+
+    def get(self, request):
+        user = request.user
+        return render(request, self.template_name, {'user': user})
+
+    def post(self, request):
+        user = request.user
+        if request.method == 'POST':
+            user.first_name = request.POST.get('first_name')
+            user.last_name = request.POST.get('last_name')
+            user.email = request.POST.get('email')
+            user.username = request.POST.get('email')
+            user.save()
+            return redirect(reverse('user_details'))
+        return render(request, self.template_name, {'user': user, 'message': "Wprowadzono niepoprawne hasło!"})
+
+
+class ChangePassword(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'change_password.html')
+
+    def post(self, request):
+        user = request.user
+        if user.check_password(request.POST.get('old-password')):
+            new_password = request.POST.get('new-password')
+            new_password2 = request.POST.get('new-password2')
+            if new_password == new_password2:
+                user.set_password(new_password)
+                user.save()
+                return redirect(reverse('login'))
+            return render(request, 'change_password.html', {'message2': "Nowe hasła nie są takie same!"})
+        return render(request, 'change_password.html', {'message': "Stare hasło jest błędne!"})
+
+
+class SuperuserRequiredMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+
+class UserListView(SuperuserRequiredMixin, View):
+    def get(self, request):
+        users = CustomUser.objects.all()
+        context = {'users': users}
+        return render(request, 'user_list.html', context)
+
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        user.delete()
+        messages.success(request, 'Użytkownik został usunięty')
+        return redirect('user_list')
+
+
+class UserEditView(SuperuserRequiredMixin, View):
+    template_name = 'user_update.html'
+    def get(self, request, id):
+        obj = get_object_or_404(CustomUser, pk=id)
+        form = UserEditForm(initial={
+            'first_name': obj.first_name,
+            'last_name': obj.last_name,
+            'email': obj.email,
+        })
+        return render(request, self.template_name, locals())
+
+    def post(self, request, id):
+        obj = get_object_or_404(CustomUser, pk=id)
+        form = UserEditForm(request.POST, initial={
+            'first_name': obj.first_name,
+            'last_name': obj.last_name,
+            'email': obj.email,
+        })
+        if form.is_valid():
+            form.save()
+            return redirect('user_list')
+
+
+class UserDeleteView(SuperuserRequiredMixin, View):
+    def get(self, request, id):
+        user = get_object_or_404(CustomUser, pk=id)
+        user.delete()
+        return redirect('user_list')

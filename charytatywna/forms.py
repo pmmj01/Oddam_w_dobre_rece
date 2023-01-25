@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from .models import *
 import re
 
@@ -132,4 +133,9 @@ class DonationMultiForm(forms.ModelForm):
         return zip_code
     class Meta:
         model = Donation
-        fields = ('quantity', 'categories', 'institution', 'address', 'phone_number', 'city', 'zip_code', 'pick_up_date', 'pick_up_time')
+        fields = ('quantity', 'categories', 'institution', 'address', 'phone_number', 'city', 'zip_code', 'pick_up_date', 'pick_up_time', 'pick_up_comment')
+
+class UserEditForm(forms.Form):
+    class Meta:
+        model = get_user_model()
+        fields = ['first_name', 'last_name', 'email']
