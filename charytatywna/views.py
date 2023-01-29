@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
@@ -10,6 +10,9 @@ from django.views.generic import CreateView
 from .forms import RegisterForm, LoginForm, DonationMultiForm, UserEditForm
 from django.contrib.auth import authenticate, login
 from .models import Donation, Institution, CustomUser, Category
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from .mixins import AjaxFormMixin
 
 
 class RegisterView(View):
@@ -131,67 +134,39 @@ class LandingPageView(View):
 #     else:
 #         return redirect(reverse(self.template_form_confirmation))
 
-class AddDonationView(LoginRequiredMixin, View):
-    template_form = 'form.html'
+class AddDonationView(LoginRequiredMixin, CreateView):
+    template_name = 'form.html'
+    form_class = DonationMultiForm
+    success_url = reverse_lazy('success')
 
-    def get(self, request):
-        form = DonationMultiForm(initial={'institution': Institution.objects.all()})
-        category = request.GET.get('category')
-        quantityt = request.GET.get('quantity')
-        institutiont = request.GET.get('institution')
-        addresst = request.GET.get('address')
-        phone_numbert = request.GET.get('phone_number')
-        cityt = request.GET.get('city')
-        zip_codet = request.GET.get('zip_code')
-        pick_up_datet = request.GET.get('pick_up_date')
-        pick_up_timet = request.GET.get('pick_up_time')
-        pick_up_comment = request.GET.get('pick_up_comment')
-        return render(request, self.template_form, {'form': form})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        context['institution'] = Institution.objects.all()
+        return context
 
-    def post(self, request):
-        form = DonationMultiForm(request.POST)
-        if form.is_valid():
-            # request.session['category'] = form.cleaned_data['category']
-            # request.session['quantity'] = form.cleaned_data['quantity']
-            # request.session['institution'] = form.cleaned_data['institution']
-            # request.session['address'] = form.cleaned_data['address']
-            # request.session['phone_number'] = form.cleaned_data['phone_number']
-            # request.session['city'] = form.cleaned_data['city']
-            # request.session['zip_code'] = form.cleaned_data['zip_code']
-            # request.session['pick_up_date'] = form.cleaned_data['pick_up_date']
-            # request.session['pick_up_time'] = form.cleaned_data['pick_up_time']
-            # request.session['pick_up_comment'] = form.cleaned_data['pick_up_comment']
-            # context = {
-            #     'category': request.session.POST.get('category'),
-            #     'quantity': request.session.POST.get('quantity'),
-            #     'institution': request.session.POST.get('institution'),
-            #     'address': request.session.POST.get('address'),
-            #     'phone_number': request.session.POST.get('phone_number'),
-            #     'city': request.session.POST.get('city'),
-            #     'zip_code': request.session.POST.get('zip_code'),
-            #     'pick_up_date': request.session.POST.get('pick_up_date'),
-            #     'pick_up_time': request.session.POST.get('pick_up_time'),
-            #     'pick_up_comment': request.session.POST.get('pick_up_comment')}
-            category = request.POST.get('category')
-            quantity = request.POST.get('quantity')
-            institution = request.POST.get('institution')
-            address = request.POST.get('address')
-            phone_number = request.POST.get('phone_number')
-            city = request.POST.get('city')
-            zip_code = request.POST.get('zip_code')
-            pick_up_date = request.POST.get('pick_up_date')
-            pick_up_time = request.POST.get('pick_up_time')
-            pick_up_comment = request.POST.get('pick_up_comment')
-            return redirect(reverse(self.template_form))
-            # return redirect('add_donation')
-        return render(request, self.template_form, {'form': form, 'errors': form.errors})
-
-    def delete(self, request):
-        request.session.flush()
-        return redirect('confirmation')
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        donation = form.save()
+        if self.request.is_ajax():
+            return JsonResponse({
+                'donation': {
+                    'category': donation.category.name,
+                    'quantity': donation.quantity,
+                    'institution': donation.institution.name,
+                    'address': donation.address,
+                    'phone_number': donation.phone_number,
+                    'city': donation.city,
+                    'zip_code': donation.zip_code,
+                    'pick_up_date': donation.pick_up_date,
+                    'pick_up_time': donation.pick_up_time,
+                    'pick_up_comment': donation.pick_up_comment,
+                }
+            })
+        return redirect(self.success_url)
 
 
-class DonationFormView(LoginRequiredMixin, View):
+class DonationSuccessView(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, 'form-confirmation.html')
 
@@ -223,7 +198,6 @@ class UserUpdate(LoginRequiredMixin, View):
             user.first_name = request.POST.get('first_name')
             user.last_name = request.POST.get('last_name')
             user.email = request.POST.get('email')
-            user.username = request.POST.get('email')
             user.save()
             return redirect(reverse('user_details'))
         return render(request, self.template_name, {'user': user, 'message': "Wprowadzono niepoprawne hasło!"})
@@ -246,11 +220,22 @@ class ChangePassword(LoginRequiredMixin, View):
         return render(request, 'change_password.html', {'message': "Stare hasło jest błędne!"})
 
 
-class SuperuserRequiredMixin:
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
+# class SuperuserRequiredMixin:
+#     def dispatch(self, request, *args, **kwargs):
+#         if not request.user.is_superuser:
+#             raise PermissionDenied
+#         return super().dispatch(request, *args, **kwargs)
+
+class SuperuserRequiredMixin(UserPassesTestMixin):
+    permission_required = 'auth.view_user'
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class AdminPanel(SuperuserRequiredMixin, View):
+    def get(self, request):
+        return redirect('admin_page')
 
 
 class UserListView(SuperuserRequiredMixin, View):
@@ -259,15 +244,24 @@ class UserListView(SuperuserRequiredMixin, View):
         context = {'users': users}
         return render(request, 'user_list.html', context)
 
+    @require_http_methods(["PUT"])
     def post(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk)
-        user.delete()
-        messages.success(request, 'Użytkownik został usunięty')
+        if request.POST['_method'] == 'DELETE':
+            user.delete()
+            messages.success(request, 'Użytkownik został usunięty')
+        elif request.POST['_method'] == 'PUT':
+            form = UserEditForm(request.POST, instance=user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Użytkownik został zaktualizowany')
+                return redirect('user_edit')
         return redirect('user_list')
 
 
 class UserEditView(SuperuserRequiredMixin, View):
     template_name = 'user_update.html'
+
     def get(self, request, id):
         obj = get_object_or_404(CustomUser, pk=id)
         form = UserEditForm(initial={

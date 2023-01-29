@@ -115,9 +115,10 @@ class DonationMultiForm(forms.ModelForm):
     def clean_pick_up_time(self):
         pick_up_time = self.cleaned_data.get('pick_up_time')
         if pick_up_time:
-            if len(pick_up_time) > 5:
+            pick_up_time_str = pick_up_time.strftime('%H:%M')
+            if len(pick_up_time_str) > 5:
                 self.add_error('pick_up_time', "Wprowadzony czas jest za długi (max 5 znaków)")
-            if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', pick_up_time):
+            if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', pick_up_time_str):
                 self.add_error('pick_up_time', "Niepoprawny format godziny (HH:MM)")
             if int(pick_up_time.strftime('%M')) > 59:
                 self.add_error('pick_up_time', "Minuta nie może być większa niż 59")
@@ -126,7 +127,7 @@ class DonationMultiForm(forms.ModelForm):
     def clean_zip_code(self):
         zip_code = self.cleaned_data.get('zip_code')
         if zip_code:
-            if len(zip_code) > 5:
+            if len(zip_code) > 6:
                 self.add_error('zip_code', "Wprowadzony kod pocztowy jest za długi (max 6 znaków)")
             if not re.match(r'^[0-9]{2}-[0-9]{3}$', zip_code):
                 self.add_error('zip_code', "Niepoprawny format kodu pocztowego (XX-XXX)")

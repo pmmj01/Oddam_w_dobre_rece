@@ -9,7 +9,7 @@
 {% endblock %}
 {% block content %}
     <section id="stats" class="stats">
-    <h3 class="counter">Ilość uzytkowników: {{ users.count }}</h3>
+        <h3 class="counter">Ilość uzytkowników: {{ users.count }}</h3>
         <div class="container container--85">
             <table class="admin-group">
                 <thead>
@@ -29,11 +29,27 @@
                         <td>{{ user.last_name }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.pk }}</td>
-                        <td>{{ user.donations_set.count }}</td>
+                        {#                        <td>{{ user.donations_set.count }}</td>#}
                         <td>{% if user.is_superuser %} Superuser {% else %} Uzytkownik {% endif %}</td>
                         <div class="admin-group admin-group--buttons">
-                            <td><a href="/user/edit/{{ user.pk }}/" class="btn btn-primary">Edit</a></td>
-                            <td><a href="/user/delete/{{ user.pk }}/" class="btn btn-warning">Delete</a></td>
+                            <td>
+                                <form action="{% url 'user_list_edit' user.pk %}" method="PUT">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            onclick="return confirm('Czy na pewno chcesz edytować dane tego użytkownika?');">
+                                        Edytuj
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <form action="{% url 'user_list_delete' user.pk %}" method="DELETE">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            onclick="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">
+                                        Usuń
+                                    </button>
+                                </form>
+                            </td>
                         </div>
                     </tr>
                 {% endfor %}

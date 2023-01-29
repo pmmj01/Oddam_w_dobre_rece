@@ -15,13 +15,14 @@
         {% if user.is_authenticated %}
             <ul class="nav--actions">
                 <li>
-                    <span>Witaj {{ user.first_name }}</span>
                     <ul class="dropdown">
-                        <li><a href="{% url 'logout' %}">Wyloguj</a></li>
-                        <li><a href="{% url 'user_details' %}">Profil</a></li>
-                        <li><a href="{% url 'user_update' %}">Ustawienia</a></li>
+                    <span>Witaj {{ user }}<br>{{ user.email_name }}</span>
+                        <li><a href="{% url 'logout' %}" class="btn btn--without-border">Wyloguj</a></li>
+                        <li><a href="{% url 'user_details' %}" class="btn btn--without-border">Profil</a></li>
+                        <li><a href="{% url 'user_update' %}" class="btn btn--without-border">Ustawienia</a></li>
                         {% if user.is_superuser %}
-                            <li><a href="{% url 'user_list' %}">Użytkownicy</a></li>
+                            <li><a href="{% url 'user_list' %}" class="btn btn--without-border">Użytkownicy</a></li>
+                            <li><a href="{% url 'admin_page' %}" class="btn btn--without-border">Panel administratora</a></li>
                         {% endif %}
                     </ul>
                 </li>
@@ -72,5 +73,8 @@
 </footer>
 
 <script src="{% static 'js/app.js' %}"></script>
+<script src="{% static 'js/jquery.js' %}"></script>
+<script src="{% static 'js/csrftoken.js' %}"></script>
+<script src="{% static 'js/form.js' %}"></script>
 </body>
 </html>

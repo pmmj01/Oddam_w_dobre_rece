@@ -32,20 +32,29 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=60)
-    is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    date_joined = models.DateTimeField(default=timezone.now)
+    email = models.EmailField(unique=True, verbose_name='Email')
+    first_name = models.CharField(max_length=30, verbose_name='Imię')
+    last_name = models.CharField(max_length=60, verbose_name='Nazwisko')
+    is_staff = models.BooleanField(default=False, verbose_name='SuperUser')
+    is_active = models.BooleanField(default=True, verbose_name='Aktywny')
+    date_joined = models.DateTimeField(default=timezone.now, verbose_name='Data dołączenia')
     username = None
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
     objects = CustomUserManager()
 
+    def __str__(self):
+        return f'{self.first_name}'
+
+    def full_name(self):
+        return f'{self.first_name} {self.last_name[0]}'
+
+    def email_name(self):
+        return self.email
+
 
 class Category(models.Model):
-    name = models.CharField(max_length=120, blank=False)
+    name = models.CharField(max_length=120, blank=False, verbose_name='Nazwa')
 
     def __str__(self):
         return self.name
@@ -72,16 +81,20 @@ class Institution(models.Model):
         OPTION2 = 'organizacja pozarządowa', 'Organizacja pozarządowa'
         OPTION3 = 'zbiórka lokalna', 'Zbiórka lokalna'
 
-    name = models.CharField(max_length=120, blank=False)
-    description = models.TextField()
+    name = models.CharField(max_length=120, blank=False, verbose_name='Nazwa')
+    description = models.TextField(verbose_name='Opis')
     type = models.CharField(max_length=26, choices=OPTIONS.choices,
-                            default=OPTIONS.OPTION1)
-    category = models.ManyToManyField(Category, related_name='categories')
+                            default=OPTIONS.OPTION1, verbose_name='Rodzaj')
+    category = models.ManyToManyField(Category, related_name='categories', verbose_name='Kategoria')
 
     def __str__(self):
         # categories_str = ', '.join([category.name[:8] for category in self.category.all()])
         # return f'{self.name} ({self.get_type_display()}) - {categories_str}.'
         return self.name
+
+    @property
+    def kategorie(self):
+        return ', '.join([cat.name for cat in self.category.all()])
 
 
 
@@ -91,19 +104,19 @@ class DonationManager(models.Manager):
 
 
 class Donation(models.Model):
-    quantity = models.IntegerField()
-    categories = models.ManyToManyField(Category)
-    institution = models.ForeignKey(Institution, on_delete=models.CASCADE)
-    address = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=20)
-    city = models.CharField(max_length=255)
-    zip_code = models.CharField(max_length=10)
-    pick_up_date = models.DateField()
-    pick_up_time = models.TimeField()
-    pick_up_comment = models.TextField(blank=True)
+    quantity = models.IntegerField(verbose_name='Ilość')
+    categories = models.ManyToManyField(Category, verbose_name='Kategorie')
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, verbose_name='Instytucja')
+    address = models.CharField(max_length=255, verbose_name='Ulica i numer')
+    phone_number = models.CharField(max_length=20, verbose_name='Numer telefonu')
+    city = models.CharField(max_length=255, verbose_name='Miasto')
+    zip_code = models.CharField(max_length=10, verbose_name='Kod pocztowy')
+    pick_up_date = models.DateField(verbose_name='Data odbioru')
+    pick_up_time = models.TimeField(verbose_name='Godzina odbioru')
+    pick_up_comment = models.TextField(blank=True, verbose_name='Informacja dla kuriera')
     # user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    archived = models.BooleanField(default=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Użytkownik')
+    is_taken = models.BooleanField(default=False, verbose_name='Archiwizowane')
 
     # def clean(self):
     #     super().clean()
@@ -115,4 +128,12 @@ class Donation(models.Model):
 
     def __str__(self):
         categories_str = ', '.join([category.name[:20] for category in self.categories.all()])
-        return f'{self.institution} "{categories_str}" ({self.quantity}x).'
+        return f'{self.institution.name} "{categories_str}" ({self.quantity}x).'
+
+    @property
+    def kategorie(self):
+        return ', '.join([category.name for category in self.categories.all()])
+
+
+    class Meta:
+        ordering = ('pick_up_date', 'pick_up_time')

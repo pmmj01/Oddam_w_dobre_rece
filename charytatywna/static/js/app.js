@@ -246,8 +246,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         const pick_up_time_summary = document.getElementById('pick_up_time')
                         pick_up_time_summary.innerText = pick_up_time
 
-                        const pick_up_coment = document.querySelector('textarea[name="pick_up_coment"]').value
-                        const pick_up_coment_summary = document.getElementById('pick_up_coment')
+                        const pick_up_coment = document.querySelector('textarea[name="pick_up_comment"]').value
+                        const pick_up_coment_summary = document.getElementById('pick_up_comment')
                         if (pick_up_coment !== "") {
                             pick_up_coment_summary.innerText = pick_up_coment
                         } else {
@@ -291,6 +291,38 @@ document.addEventListener("DOMContentLoaded", function () {
             this.$stepInstructions[0].parentElement.parentElement.hidden = this.currentStep >= 6;
             this.$step.parentElement.hidden = this.currentStep >= 6;
 
+            let multiForm = this.$form.querySelector("form")
+            let summary = document.querySelectorAll(".summary--text")
+            let address = document.querySelector(".summary--address")
+            let delivery = document.querySelector(".summary--delivery")
+            let quantity = multiForm.elements['quantity'].value.toString()
+            let categories = multiForm.querySelectorAll('input[name="categories"]:checked')
+            let institution = multiForm.querySelector('input[name="institution"]:checked').dataset
+            let street = multiForm.querySelector('input[name="address"]').value
+            let city = multiForm.querySelector('input[name="city"]').value
+            let zip_code = multiForm.querySelector('input[name="zip_code"]').value
+            let phone_number = multiForm.querySelector('input[name="phone_number"]').value
+            let pick_up_date = multiForm.querySelector('input[name="pick_up_date"]').value
+            let pick_up_time = multiForm.querySelector('input[name="pick_up_time"]').value
+            let pick_up_comment = document.querySelector('#pick_up_comment').value
+
+
+            if (bags === '1') {
+                summary[0].innerText = bags + ' worek'
+            } else if (bags.slice(-1) === '2' || bags.slice(-1) === '3' || bags.slice(-1) === '4') {
+                summary[0].innerText = bags + ' worki'
+            } else {
+                summary[0].innerText = bags + ' worków'
+            }
+            summary[1].innerText = institution.type + ' ' + institution.name
+            address.children[0].innerText = street
+            address.children[1].innerText = city
+            address.children[2].innerText = zip_code
+            address.children[3].innerText = phone_number
+            delivery.children[0].innerText = pick_up_date
+            delivery.children[1].innerText = pick_up_time
+            delivery.children[2].innerText = pick_up_comment
+
         }
 
         /**
@@ -305,8 +337,81 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // Pobierz formularz
+    const forms = document.querySelector('#donation-form');
+
+    // Nasłuchuj submit formularza
+    forms.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        // Pobierz wartości z formularza
+        const category = forms.elements.category.value;
+        const quantity = forms.elements.quantity.value;
+        const institution = forms.elements.institution.value;
+        const address = forms.elements.address.value;
+        const city = forms.elements.city.value;
+        const zip_code = forms.elements.zip_code.value;
+        const phone_number = forms.elements.phone_number.value;
+        const pick_up_date = forms.elements.pick_up_date.value;
+        const pick_up_time = forms.elements.pick_up_time.value;
+        const pick_up_comment = forms.elements.pick_up_comment.value;
+    });
+
+
     const form = document.querySelector(".form--steps");
     if (form !== null) {
         new FormSteps(form);
     }
+
+
+    function editUser(pk) {
+        let form = document.getElementById('edit-user-form');
+        let data = new FormData(form);
+        fetch(`/user/${pk}/`, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+            .then((response) => {
+                if (response.ok) {
+                    alert('Użytkownik został zaktualizowany');
+                    location.reload();
+                } else {
+                    alert('Wystąpił błąd podczas edytowania użytkownika');
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+                alert('Wystąpił błąd podczas edytowania użytkownika');
+            });
+    }
+
+
+    function deleteUser(pk) {
+        if (confirm("Czy na pewno chcesz usunąć tego użytkownika?")) {
+            fetch(`/user/${pk}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        alert('Użytkownik został usunięty');
+                        location.reload();
+                    } else {
+                        alert('Wystąpił błąd podczas usuwania użytkownika');
+                    }
+                })
+                .catch((error) => {
+                    console.log(error);
+                    alert('Wystąpił błąd podczas usuwania użytkownika');
+                });
+        }
+    }
+
+
 });

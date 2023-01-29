@@ -55,14 +55,15 @@
             <div class="form--steps-container">
                 <div class="form--steps-counter">Krok <span>1</span>/5</div>
 
-                <form method="post">
+                <form id="donation-form" class="my-ajax-form" method="post"
+                      data-url="{{ request.build_absolute_uri|safe }}">
                     {% csrf_token %}
                     <!-- STEP 1: class .active is switching steps -->
-                    <div data-step="1" class="active">
+                    <div data-step="1" class="active" name="step_1" value="1">
                         <h3>Zaznacz co chcesz oddać:</h3>
                         {% for categories in form.categories %}
                             <div class="form-group form-group--checkbox">
-                                <label>
+                                <label for="category">
                                     <input
                                             type="checkbox"
                                             name="categories"
@@ -81,14 +82,14 @@
                     </div>
 
                     <!-- STEP 2 -->
-                    <div data-step="2">
+                    <div data-step="2" name="step_2" value="2">
                         <h3>Podaj liczbę 60l worków, w które spakowałeś/aś rzeczy:</h3>
 
                         <div class="form-group form-group--inline">
-                            <label>
+                            <label for="quantity">
                                 Liczba 60l worków:
                                 {{ form.quantity }}
-                                {#                                <input type="number" name="bags" step="1" min="1"/>#}
+                                <input type="number" id="id_quantity" name="quantity" step="1" min="1"/>
                             </label>
                         </div>
 
@@ -100,24 +101,38 @@
 
 
                     <!-- STEP 3 -->
-                    <div data-step="3">
-                        <h3>Wybierz organizacje, której chcesz pomóc:</h3>
-
-                        <div class="form-group form-group--checkbox">
-                            {#                            {% for institution in form.institution %}#}
-                            <label data-categories="{{ institution.category.all }}">
-                                <input type="radio" name="organization" value="institution"/>
-                                <span class="checkbox radio">{{ institution.category.all }}</span>
-                                <span class="description">
-                                    <div class="title">{{ form.institution }}</div>
-                                    <div class="subtitle">
-                                        Cel i misja: {{ institution.pk }}
-                                    </div>
-                            </span>
+                    <div data-step="3" name="step_3" value="3">
+                        <div class="form-group form-group--select">
+                            <h2>Wybierz organizację, której chcesz pomóc:</h2>
+                            <label for="institution">
+                                <select name="institution" id="id_institution" required>
+                                    {% for institution in form.fields.institution.queryset %}
+                                        <option value="{{ institution.pk }}">{{ institution.name }}</option>
+                                    {% endfor %}
+                                </select>
                             </label>
-                            {#                            {% endfor %}#}
                         </div>
+                        <div id="institution-description"></div>
+                        <script>
+                            $(document).ready(function () {
+                                $("#institution-select").on("change", function () {
+                                    const selectedOption = $(this).find(":selected");
+                                    const institutionId = selectedOption.val();
+                                    $.ajax({
+                                        url: '/get-institution-description/',
+                                        type: 'GET',
+                                        data: {'institution_id': institutionId},
+                                        success: function (data) {
+                                            $("#institution-description").text(data.description);
+                                        },
+                                        error: function (error) {
+                                            console.log(error);
+                                        }
+                                    });
+                                });
+                            });
 
+                        </script>
 
                         <div class="form-group form-group--buttons">
                             <button type="button" class="btn prev-step">Wstecz</button>
@@ -126,60 +141,62 @@
                     </div>
 
                     <!-- STEP 4 -->
-                    <div data-step="4">
+                    <div data-step="4" name="step_4" value="4">
                         <h3>Podaj adres oraz termin odbioru rzecz przez kuriera:</h3>
 
                         <div class="form-section form-section--columns">
                             <div class="form-section--column">
                                 <h4>Adres odbioru</h4>
                                 <div class="form-group form-group--inline">
-                                    <label> Ulica {{ form.address }} </label>
+                                    <label for="address"> Ulica {{ form.address }} </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label> Miasto {{ form.city }} </label>
+                                    <label for="city"> Miasto {{ form.city }} </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label> Kod pocztowy {{ form.zip_code }} </label>
-                                    <script>
-                                        document.querySelector('#id_zip_code').addEventListener('input', function (e) {
-                                            if (e.target.value.length === 2 && e.target.value.slice(-1) !== ':') {
-                                                e.target.value += '-';
-                                            }
-                                        });
-                                    </script>
-
+                                    <label for="zip_code">
+                                        <label for="{{ form.zip_code.id_for_label }}">Kod pocztowy
+                                            <input type="text" id="id_zip_code" maxlength="6"
+                                                   pattern="[0-9]{2}-[0-9]{3}"
+                                                    {% if form.zip_code.value %}
+                                                   value="{{ form.zip_code.value }}" {% endif %}
+                                                   oninput="if (this.value.length === 2 && this.value.slice(-1) !== '-') this.value += '-'">
+                                            {% if form.zip_code.errors %}
+                                                <div class="alert alert-danger">{{ form.zip_code.errors.as_text }}</div>
+                                            {% endif %}
+                                        </label>
+                                    </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label> Numer telefonu {{ form.phone_number }} </label>
+                                    <label for="phone_number"> Numer telefonu {{ form.phone_number }} </label>
                                 </div>
                             </div>
 
                             <div class="form-section--column">
                                 <h4>Termin odbioru</h4>
                                 <div class="form-group form-group--inline">
-                                    <label>{{ form.pick_up_date }} </label>
+                                    <label for="pick_up_date">{{ form.pick_up_date }} </label>
+                                </div>
+                                <div class="form-group form-group--inline">
+                                    <label for="pick_up_time">
+                                        <label for="{{ form.pick_up_time.id_for_label }}">
+                                            <input type="text" placeholder="Godzina (HH:MM)" id="id_pick_up_time"
+                                                   maxlength="5" pattern="[0-9]{4}"
+                                                    {% if form.pick_up_time.value %}
+                                                   value="{{ form.pick_up_time.value|date:'H:i' }}" {% endif %}
+                                                   oninput="if (this.value.length === 2 && this.value.slice(-1) !== ':') this.value += ':'">
+                                            {% if form.pick_up_time.errors %}
+                                                <div class="alert alert-danger">{{ form.pick_up_time.errors.as_text }}</div>
+                                            {% endif %}
+                                        </label>
+                                    </label>
                                 </div>
 
                                 <div class="form-group form-group--inline">
-                                    <label for="{{ form.errors.pick_up_time }}">
-                                        {{ form.pick_up_time }}</label>
-                                    <script>
-                                        document.querySelector('#id_pick_up_time').addEventListener('input', function (e) {
-                                            if (e.target.value.length === 2 && e.target.value.slice(-1) !== ':') {
-                                                e.target.value += ':'
-                                            }
-                                        });
-                                    </script>
-                                    {% if form.errors.pick_up_time %}
-                                        <div class="alert alert-danger">{{ form.errors.pick_up_time }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="form-group form-group--inline">
-                                    <label>{{ form.pick_up_comment }}</label>
+                                    <label for="pick_up_comment">{{ form.pick_up_comment }}</label>
                                 </div>
                             </div>
                         </div>
@@ -194,22 +211,21 @@
                         <h3>Podsumowanie Twojej darowizny</h3>
 
                         <div class="summary">
-                            <div class="form-section">
+                            <div class="form-section--column">
                                 <h4>Oddajesz:</h4>
                                 <ul>
                                     <li>
                                         <span class="icon icon-bag"></span>
                                         <span class="summary--text" id="quantity">
-                                                <p>Kategoria: {{ category }}</p>
-                                            {{ category }} worków z {{ categories }}
-                                            {{ quantity }} worków z {{ donation.categories }}
+                                                <p>Kategoria: {{ donation.category.name }}</p>
+                                            worków z {{ donation.quantity }}
                                         </span>
                                     </li>
 
                                     <li>
                                         <span class="icon icon-hand"></span>
                                         <span class="summary--text" id="institution"
-                                        >Dla {{ institution }} {{ donation.institution }}</span>
+                                        >Dla {{ donation.institution.name }} {{ donation.institution }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -217,31 +233,26 @@
                             <div class="form-section form-section--columns">
                                 <div class="form-section--column">
                                     <h4>Adres odbioru:</h4>
-                                    <ul>
+                                    <ul class="summary--address">
                                         <li id="address"></li>
                                         <li id="city"></li>
                                         <li id="zip_code"></li>
                                         <li id="phone_number"></li>
                                     </ul>
-                                    <ul>
-                                        <li>{{ address }}</li>
-                                        <li>{{ city }}</li>
-                                        <li>{{ zip_code }}</li>
-                                        <li>{{ phone_number }}</li>
+                                    <ul class="summary--address">
+                                        <li>{{ donation.address }}</li>
+                                        <li>{{ donation.city }}</li>
+                                        <li>{{ donation.zip_code }}</li>
+                                        <li>{{ donation.phone_number }}</li>
                                     </ul>
                                 </div>
 
                                 <div class="form-section--column">
                                     <h4>Termin odbioru:</h4>
-                                    <ul>
-                                        <li>{{ pick_up_date }}</li>
-                                        <li>{{ pick_up_time }}</li>
-                                        <li>{{ pick_up_coment }}</li>
-                                    </ul>
-                                    <ul>
-                                        <li>{{ donation.pich_up_date }}</li>
-                                        <li>{{ donation.pich_up_time }}</li>
-                                        <li>{{ donation.pich_up_coment }}</li>
+                                    <ul class="summary--delivery">
+                                        <li>{{ donation.pick_up_date }}</li>
+                                        <li>{{ donation.pick_up_time }}</li>
+                                        <li>{{ donation.pick_up_coment }}</li>
                                     </ul>
                                 </div>
                             </div>

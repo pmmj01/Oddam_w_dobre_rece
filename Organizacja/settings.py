@@ -133,7 +133,10 @@ MEDIA_ROOT = 'media'
 # AUTH_USER_MODEL = 'charytatywna.User'
 AUTH_USER_MODEL = 'charytatywna.CustomUser'
 
-LOGIN_URL = 'login'
-LOGOUT_URL = 'logout'
+LOGIN_URL = '/login/'
+LOGOUT_URL = '/logout/'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = '/'
+
+
+SESSION_COOKIE_AGE = 6000
